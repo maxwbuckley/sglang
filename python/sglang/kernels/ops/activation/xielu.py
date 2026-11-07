@@ -74,8 +74,10 @@ def xielu_coeffs(
 
 
 def xielu_reference(x: torch.Tensor, coeffs: torch.Tensor) -> torch.Tensor:
-    """The fp32 torch expression the kernel matches, rounded once to ``x.dtype``."""
-    alpha_p, alpha_n, beta, eps = coeffs.to(x.device).unbind()
+    """The fp32 torch expression the kernel matches, rounded once to ``x.dtype``.
+
+    ``coeffs`` is the fp32 tensor from :func:`xielu_coeffs` on ``x``'s device."""
+    alpha_p, alpha_n, beta, eps = coeffs.unbind()
     xf = x.float()
     pos = alpha_p * xf * xf + beta * xf
     neg = (torch.expm1(torch.clamp_max(xf, eps)) - xf) * alpha_n + beta * xf

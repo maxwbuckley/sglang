@@ -320,9 +320,9 @@ class XIELU(BaseFusedOp):
     form. The effective coefficients ``softplus(alpha_p)`` and
     ``beta + softplus(alpha_n)`` are constant at inference time, so they are
     derived once in fp32 into the non-persistent ``_coeffs`` buffer
-    (:meth:`update_coefficients`, after loading weights), which the CUDA kernel
-    reads on device. Both paths evaluate the expression in fp32 and round once
-    to the input dtype.
+    (:meth:`update_coefficients`, after loading weights), which both the CUDA
+    kernel and the native path read. Both paths evaluate the expression in fp32
+    and round once to the input dtype.
     """
 
     def __init__(
@@ -359,8 +359,7 @@ class XIELU(BaseFusedOp):
         )
 
     def forward_native(self, x: torch.Tensor) -> torch.Tensor:
-        coeffs = xielu_coeffs(self.alpha_p, self.alpha_n, self.beta, self.eps)
-        return xielu_reference(x, coeffs)
+        return xielu_reference(x, self._coeffs)
 
     def forward_cuda(self, x: torch.Tensor) -> torch.Tensor:
         if x.dtype not in (torch.float16, torch.bfloat16) or not x.is_contiguous():
